@@ -20,7 +20,7 @@ import tornado.web
 
 class MainHandler(tornado.web.RequestHandler):
 
-    USER_AGENT = 'BiliDown.tv Danmaku2ASS Tornado/1.0 (sb@loli.con.sh) ; BiliDown.TV Bilibili Node.js API/0.2.0 (zyu@zhuogu.net)'
+    USER_AGENT = 'BiliDown.tv Danmaku2ASS Tornado/1.0 (sb@loli.con.sh) ; BiliDown.tv Bilibili Node.js API/0.2.0 (zyu@zhuogu.net)'
     MAX_THREADS = 8
     ThreadPoolExecutor = concurrent.futures.ThreadPoolExecutor(MAX_THREADS)
 
@@ -122,7 +122,7 @@ class MainHandler(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     def fetch_input(self, url, x_forwarded_for=None):
         '''Download comment file from the Internet'''
-        if not url.startswith('http://comment.bilibili.tv/') and not url.startswith('http://www.bilidown.tv/'):
+        if not url.startswith('http://comment.bilibili.tv/') and not url.startswith('http://comment.bilibili.cn/') and not url.startswith('http://www.bilidown.tv/'):
             raise ValueError('specified URL violates domain restriction')
         http_client = tornado.httpclient.AsyncHTTPClient()
         request_headers = {'Origin': 'http://www.bilidown.tv'}
