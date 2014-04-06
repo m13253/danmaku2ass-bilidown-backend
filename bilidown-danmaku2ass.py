@@ -122,7 +122,8 @@ class MainHandler(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     def fetch_input(self, url, x_forwarded_for=None):
         '''Download comment file from the Internet'''
-        assert url.startswith('http://comment.bilibili.tv/')
+        if not url.startswith('http://comment.bilibili.tv/') and not url.startswith('http://www.bilidown.tv/'):
+            raise ValueError('specified URL violates domain restriction')
         http_client = tornado.httpclient.AsyncHTTPClient()
         request_headers = {'Origin': 'http://www.bilidown.tv'}
         if x_forwarded_for is not None:
