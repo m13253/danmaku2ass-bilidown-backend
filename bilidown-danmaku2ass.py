@@ -45,9 +45,9 @@ class MainHandler(tornado.web.RequestHandler):
                 font_face = self.get_argument('fn')
             except tornado.web.MissingArgumentError:
                 pass
-            font_size = 25.0
+            font_size = 25
             try:
-                font_size = int(self.get_argument('fs'))
+                font_size = float(self.get_argument('fs'))
                 if font_size <= 0: raise ValueError
             except tornado.web.MissingArgumentError:
                 pass
@@ -82,7 +82,6 @@ class MainHandler(tornado.web.RequestHandler):
             self.set_status(400)
             self.set_header('Content-Type', 'text/html; charset=utf-8')
             self.render('specification.html')
-            self.finish()
             return
         # Open a local file (socket) or download it
         if url.startswith('file:///'):

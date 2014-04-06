@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8" />
+<title>Danmaku2ASS for BiliDown.tv API手册</title>
+<style>
+.valign-top, .valign-top * {
+vertical-align: top;
+}
+</style>
+</head>
+<body>
+<h1>Danmaku2ASS for BiliDown.tv API手册</h1>
+<div><strong>调用URL</strong> /danmaku2ass</div>
+<div><strong>调用方式</strong> GET</div>
+<div><strong>调用参数</strong></div>
+<blockquote><div><table class="valign-top">
+<tr><td><strong>url</strong></td><td><div>要转换的XML评论文件</div><div>取值：字符串，<tt>^http://comment\.bilibili\.tv/.*|^http://www\.bilidown\.tv/.*</tt></div></td></tr>
+<tr><td><strong>w</strong></td><td><div>舞台宽度</div><div>取值：正整数</div><div>单位：像素</div></td></tr>
+<tr><td><strong>h</strong></td><td><div>舞台高度</div><div>取值：正整数</div><div>单位：像素</div></td></tr>
+<tr><td><strong>p</strong></td><td><div>在舞台底部预留空位</div><div>取值：正整数</div><div>单位：像素</div></td></tr>
+<tr><td><strong>fn</strong></td><td><div>指定字体名称</div><div>取值：字符串</div><div>默认：SimHei</div></td></tr>
+<tr><td><strong>fs</strong></td><td><div>默认字号</div><div>取值：正整数</div><div>单位：像素</div></td></tr>
+<tr><td><strong>a</strong></td><td><div>文字不透明度</div><div>取值：实数，0≤a≤1</div></td></tr>
+<tr><td><strong>l</strong></td><td><div>弹幕显示时长</div><div>取值：实数，l&gt;0</div><div>单位：秒</div><div>默认：5</div></td></tr>
+<tr><td><strong>r</strong></td><td><div>在舞台满时减少弹幕数量</div><div>取值：布尔，有/无</div><div>默认：无</div></td></tr>
+<tr><td><strong>o</strong></td><td><div>输出文件</div><div>取值：字符串</tt></div></td></tr>
+</table></div></blockquote>
+<div><a href="https://github.com/m13253/danmaku2ass" target="_blank">Danmaku2ASS的GitHub专页</a> | <a href="http://weibo.com/uc18383261" target="_blank">StarBrilliant的新浪微博</a></div>
+</body>
+</html>
