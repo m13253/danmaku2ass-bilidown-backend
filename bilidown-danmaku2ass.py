@@ -28,19 +28,24 @@ class MainHandler(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     @tornado.web.asynchronous
     def get(self):
-        if not self.verify_rate(): return
-        if not (yield self.verify_cookie()): return
+        if not self.verify_rate():
+            return
+        if not (yield self.verify_cookie()):
+            return
         # Parse arguments
         try:
             url = self.get_argument('url')
             width = int(self.get_argument('w'))
-            if width <= 0: raise ValueError
+            if width <= 0:
+                raise ValueError
             height = int(self.get_argument('h'))
-            if not (0 < height <= 65535): raise ValueError
+            if not (0 < height <= 65535):
+                raise ValueError
             reserve_blank = 0
             try:
                 reserve_blank = int(self.get_argument('p'))
-                if reserve_blank < 0: raise ValueError
+                if reserve_blank < 0:
+                    raise ValueError
             except tornado.web.MissingArgumentError:
                 pass
             font_face = 'SimHei'
@@ -51,13 +56,15 @@ class MainHandler(tornado.web.RequestHandler):
             font_size = 25
             try:
                 font_size = float(self.get_argument('fs'))
-                if font_size <= 0: raise ValueError
+                if font_size <= 0:
+                    raise ValueError
             except tornado.web.MissingArgumentError:
                 pass
             text_opacity = 1.0
             try:
                 text_opacity = float(self.get_argument('a'))
-                if not (0 <= text_opacity <= 1): raise ValueError
+                if not (0 <= text_opacity <= 1):
+                    raise ValueError
             except tornado.web.MissingArgumentError:
                 pass
             comment_duration = 5.0
@@ -145,7 +152,8 @@ class MainHandler(tornado.web.RequestHandler):
             'allow_ipv6': True
         }
         response = yield http_client.fetch(tornado.httpclient.HTTPRequest(**request_options))
-        if response.error: raise response.error
+        if response.error:
+            raise response.error
         raise tornado.gen.Return(response.body.decode('utf-8', 'replace'))
 
     def verify_rate(self):
@@ -157,7 +165,7 @@ class MainHandler(tornado.web.RequestHandler):
         threshold_time = current_time-20
         result = True
         for i, (last_time, ip) in enumerate(MainHandler.last_visited):
-            if last_time<threshold_time:
+            if last_time < threshold_time:
                 del MainHandler.last_visited[i]
             elif ip == self.request.remote_ip:
                 result = False
@@ -190,7 +198,8 @@ class MainHandler(tornado.web.RequestHandler):
         }
         try:
             response = yield http_client.fetch(tornado.httpclient.HTTPRequest(**request_options))
-            if response.error: raise response.error
+            if response.error:
+                raise response.error
         except tornado.httpclient.HTTPError as error:
             self.set_status(error.code)
             if error.response and 'Location' in error.response.headers:
