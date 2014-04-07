@@ -4,6 +4,7 @@ import concurrent.futures
 import datetime
 import functools
 import io
+import time
 
 import curl  # https://github.com/m13253/pycurl-python3
 
@@ -27,6 +28,7 @@ class MainHandler(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     @tornado.web.asynchronous
     def get(self):
+        if not self.verify_rate(): return
         if not (yield self.verify_cookie()): return
         # Parse arguments
         try:
@@ -34,7 +36,7 @@ class MainHandler(tornado.web.RequestHandler):
             width = int(self.get_argument('w'))
             if width <= 0: raise ValueError
             height = int(self.get_argument('h'))
-            if height <= 0: raise ValueError
+            if not (0 < height <= 65535): raise ValueError
             reserve_blank = 0
             try:
                 reserve_blank = int(self.get_argument('p'))
@@ -89,7 +91,7 @@ class MainHandler(tornado.web.RequestHandler):
             fi = url[7:]
         else:
             try:
-                fi = io.StringIO((yield self.fetch_input(url, x_forwarded_for)))
+                fi = io.StringIO((yield self.fetch_input(url)))
             except Exception as e:
                 return self.print_error(e)
         # Go and convert it
@@ -121,14 +123,15 @@ class MainHandler(tornado.web.RequestHandler):
         self.render('error.html', e=e)
 
     @tornado.gen.coroutine
-    def fetch_input(self, url, x_forwarded_for=None):
+    def fetch_input(self, url):
         '''Download comment file from the Internet'''
         if not url.startswith('http://comment.bilibili.tv/') and not url.startswith('http://comment.bilibili.cn/') and not url.startswith('http://www.bilidown.tv/'):
             raise ValueError('specified URL violates domain restriction')
         http_client = tornado.httpclient.AsyncHTTPClient()
-        request_headers = {'Origin': 'http://www.bilidown.tv'}
-        if x_forwarded_for is not None:
-            request_headers['X-Forwarded-For'] = x_forwarded_for
+        request_headers = {
+            'Origin': 'http://www.bilidown.tv',
+            'X-Forwarded-For': self.request.remote_ip
+        }
         request_options = {
             'url': url,
             'method': 'GET',
@@ -145,12 +148,36 @@ class MainHandler(tornado.web.RequestHandler):
         if response.error: raise response.error
         raise tornado.gen.Return(response.body.decode('utf-8', 'replace'))
 
+    def verify_rate(self):
+        try:
+            MainHandler.last_visited
+        except AttributeError:
+            MainHandler.last_visited = []
+        current_time = time.time()
+        threshold_time = current_time-20
+        result = True
+        for i, (last_time, ip) in enumerate(MainHandler.last_visited):
+            if last_time<threshold_time:
+                del MainHandler.last_visited[i]
+            elif ip == self.request.remote_ip:
+                result = False
+            else:
+                break
+        if result:
+            MainHandler.last_visited.append((current_time, self.request.remote_ip))
+        else:
+            raise tornado.web.HTTPError(429)
+        return result
+
     @tornado.gen.coroutine
     def verify_cookie(self):
         '''Visit COOKIE_VERIFIER to verify cookie'''
         assert self.COOKIE_VERIFIER.startswith('/')
         http_client = tornado.httpclient.AsyncHTTPClient()
-        request_headers = {'Cookie': '; '.join(self.request.headers.get_list('Cookie'))}
+        request_headers = {
+            'Cookie': '; '.join(self.request.headers.get_list('Cookie')),
+            'X-Forwarded-For': self.request.remote_ip
+        }
         request_options = {
             'url': 'http://%s%s' % (self.request.headers.get('Host', 'localhost'), self.COOKIE_VERIFIER),
             'method': 'GET',
@@ -161,7 +188,6 @@ class MainHandler(tornado.web.RequestHandler):
             'follow_redirects': False,
             'allow_ipv6': True
         }
-        print(':::::::::::: ', request_options['url'])
         try:
             response = yield http_client.fetch(tornado.httpclient.HTTPRequest(**request_options))
             if response.error: raise response.error
