@@ -8,8 +8,6 @@ import curl  # https://github.com/m13253/pycurl-python3
 
 import danmaku2ass  # https://github.com/m13253/danmaku2ass
 
-import requests
-
 import tornado.gen
 import tornado.httpclient
 import tornado.httpserver
@@ -28,6 +26,7 @@ class MainHandler(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     @tornado.web.asynchronous
     def get(self):
+        if not (yield self.verify_cookie()): return
         # Parse arguments
         try:
             url = self.get_argument('url')
@@ -133,7 +132,7 @@ class MainHandler(tornado.web.RequestHandler):
             'url': url,
             'method': 'GET',
             'headers': request_headers,
-            'user_agent': MainHandler.USER_AGENT,
+            'user_agent': self.USER_AGENT,
             'connect_timeout': 60,
             'request_timeout': 60,
             'follow_redirects': True,
@@ -142,13 +141,40 @@ class MainHandler(tornado.web.RequestHandler):
             'allow_ipv6': True
         }
         response = yield http_client.fetch(tornado.httpclient.HTTPRequest(**request_options))
-        if response.error:
-            raise response.error
-        else:
-            raise tornado.gen.Return(response.body.decode('utf-8', 'replace'))
+        if response.error: raise response.error
+        raise tornado.gen.Return(response.body.decode('utf-8', 'replace'))
+
+    @tornado.gen.coroutine
+    def verify_cookie(self):
+        '''Visit COOKIE_VERIFIER to verify cookie'''
+        assert self.COOKIE_VERIFIER.startswith('/')
+        http_client = tornado.httpclient.AsyncHTTPClient()
+        request_headers = {'Cookie': '; '.join(self.request.headers.get_list('Cookie'))}
+        request_options = {
+            'url': 'http://%s%s' % (self.request.headers.get('Host', 'localhost'), self.COOKIE_VERIFIER),
+            'method': 'GET',
+            'headers': request_headers,
+            'user_agent': self.request.headers.get('User-Agent', self.USER_AGENT),
+            'connect_timeout': 60,
+            'request_timeout': 60,
+            'follow_redirects': False,
+            'allow_ipv6': True
+        }
+        print(':::::::::::: ', request_options['url'])
+        try:
+            response = yield http_client.fetch(tornado.httpclient.HTTPRequest(**request_options))
+            if response.error: raise response.error
+        except tornado.httpclient.HTTPError as error:
+            self.set_status(error.code)
+            if error.response and 'Location' in error.response.headers:
+                self.set_header('Location', error.response.headers['Location'])
+            self.set_header('Content-Type', 'text/html; charset=utf-8')
+            self.render('error.html', e=ValueError('Unauthorized'))
+            return False
+        return True
 
 
-class CookieVerifyHandler:
+class CookieVerifyHandler(tornado.web.RequestHandler):
     def get(self):
         self.write('OK')
 
