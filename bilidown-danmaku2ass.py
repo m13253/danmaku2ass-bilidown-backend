@@ -21,6 +21,7 @@ import tornado.web
 class MainHandler(tornado.web.RequestHandler):
 
     USER_AGENT = 'BiliDown.tv Danmaku2ASS Tornado/1.0 (sb@loli.con.sh) ; BiliDown.tv Bilibili Node.js API/0.2.0 (zyu@zhuogu.net)'
+    COOKIE_VERIFIER = '/cookie_verify'
     MAX_THREADS = 8
     ThreadPoolExecutor = concurrent.futures.ThreadPoolExecutor(MAX_THREADS)
 
@@ -147,6 +148,11 @@ class MainHandler(tornado.web.RequestHandler):
             raise tornado.gen.Return(response.body.decode('utf-8', 'replace'))
 
 
+class CookieVerifyHandler:
+    def get(self):
+        self.write('OK')
+
+
 if __name__ == '__main__':
     tornado.options.define("debug", default=False, help="enabling debugging features", type=bool)
     tornado.options.define("port", default=7777, help="run on the given port", type=int)
@@ -160,6 +166,7 @@ if __name__ == '__main__':
     }
     application = tornado.web.Application([
         ('/danmaku2ass', MainHandler),
+        ('/cookie_verify', CookieVerifyHandler),
         ('/.*', tornado.web.RedirectHandler, {'url': '/danmaku2ass'})
     ], **app_settings)
     server = tornado.httpserver.HTTPServer(application, xheaders=True)
