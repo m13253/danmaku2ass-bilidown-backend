@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import concurrent.futures
+import datetime
 import functools
 import io
 
@@ -92,31 +93,31 @@ class MainHandler(tornado.web.RequestHandler):
             except Exception as e:
                 return self.print_error(e)
         # Go and convert it
-        self.progress_callback_called = False
-        self.set_header('Content-Type', 'application/octet-stream')
-        self.set_header('Content-Disposition', 'attachment; filename="%s"' % output_filename)
         fo = io.StringIO()
         try:
             self.ThreadPoolExecutor.submit(
                 danmaku2ass.Danmaku2ASS, [fi], fo, width, height, reserve_blank, font_face, font_size, text_opacity, comment_duration, is_reduce_comments
             ).add_done_callback(
-                lambda future: tornado.ioloop.IOLoop.instance().add_callback(functools.partial(self.danmaku2ass_finished, fo, future))
+                lambda future: tornado.ioloop.IOLoop.instance().add_callback(functools.partial(self.danmaku2ass_finished, fo, output_filename, future))
             )
         except Exception as e:
             return self.print_error(e)
 
-    def danmaku2ass_finished(self, fo, future):
+    def danmaku2ass_finished(self, fo, output_filename, future):
         e = future.exception()
         if e:
             return self.print_error(e)
         fo.seek(0)
+        self.set_header('Content-Type', 'application/octet-stream')
+        self.set_header('Content-Disposition', 'attachment; filename="%s"' % output_filename)
+        self.set_header('Cache-Control', 'public, max-age=60')
+        self.set_header('Expires', datetime.datetime.utcnow()+datetime.timedelta(minutes=1))
         self.write(''.encode('utf-8-sig'))
         self.finish(fo.read())
 
     def print_error(self, e):
         self.set_status(500)
         self.set_header('Content-Type', 'text/html; charset=utf-8')
-        self.clear_header('Content-Disposition')
         self.render('error.html', e=e)
 
     @tornado.gen.coroutine
