@@ -124,8 +124,11 @@ class MainHandler(tornado.web.RequestHandler):
         self.write(''.encode('utf-8-sig'))
         self.finish(fo.read())
 
-    def print_error(self, e):
-        self.set_status(500)
+    def print_error(self, e, status=500):
+        try:
+            self.set_status(status)
+        except Exception:
+            self.set_status(500)
         self.set_header('Content-Type', 'text/html; charset=utf-8')
         self.render('error.html', e=e)
 
@@ -174,7 +177,7 @@ class MainHandler(tornado.web.RequestHandler):
         if result:
             MainHandler.last_visited.append((current_time, self.request.remote_ip))
         else:
-            raise tornado.web.HTTPError(429)
+            self.print_error(e=ValueError('请求太频繁，请稍候30秒'), status=429)
         return result
 
     @tornado.gen.coroutine
@@ -201,11 +204,9 @@ class MainHandler(tornado.web.RequestHandler):
             if response.error:
                 raise response.error
         except tornado.httpclient.HTTPError as error:
-            self.set_status(error.code)
             if error.response and 'Location' in error.response.headers:
                 self.set_header('Location', error.response.headers['Location'])
-            self.set_header('Content-Type', 'text/html; charset=utf-8')
-            self.render('error.html', e=ValueError('Unauthorized'))
+            self.print_error(e=ValueError('认证失败'), status=error.code)
             return False
         return True
 
