@@ -5,6 +5,7 @@ import datetime
 import functools
 import io
 import time
+import urllib.parse
 
 import curl  # https://github.com/m13253/pycurl-python3
 
@@ -21,7 +22,7 @@ import tornado.web
 class MainHandler(tornado.web.RequestHandler):
 
     USER_AGENT = 'BiliDown.tv Danmaku2ASS Tornado/1.0 (sb@loli.con.sh) ; BiliDown.tv Bilibili Node.js API/0.2.0 (zyu@zhuogu.net)'
-    COOKIE_VERIFIER = '/cookie_verify'
+    COOKIE_VERIFIER = '/cookie_verify?sig=%(sig)s'
     MAX_THREADS = 8
     ThreadPoolExecutor = concurrent.futures.ThreadPoolExecutor(MAX_THREADS)
 
@@ -184,13 +185,18 @@ class MainHandler(tornado.web.RequestHandler):
     def verify_cookie(self):
         '''Visit COOKIE_VERIFIER to verify cookie'''
         assert self.COOKIE_VERIFIER.startswith('/')
+        signature = ''
+        try:
+            signature = urllib.parse.quote(str(self.get_argument('sig')))
+        except (TypeError, ValueError, tornado.web.MissingArgumentError):
+            pass
         http_client = tornado.httpclient.AsyncHTTPClient()
         request_headers = {
             'Cookie': '; '.join(self.request.headers.get_list('Cookie')),
             'X-Forwarded-For': self.request.remote_ip
         }
         request_options = {
-            'url': 'http://%s%s' % (self.request.headers.get('Host', 'localhost'), self.COOKIE_VERIFIER),
+            'url': 'http://%s%s' % (self.request.headers.get('Host', 'localhost'), (self.COOKIE_VERIFIER % {'sig': signature})),
             'method': 'GET',
             'headers': request_headers,
             'user_agent': self.request.headers.get('User-Agent', self.USER_AGENT),
