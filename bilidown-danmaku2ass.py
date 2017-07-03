@@ -121,7 +121,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.set_header('Content-Type', 'application/octet-stream')
         self.set_header('Content-Disposition', 'attachment; filename="%s"' % output_filename)
         self.set_header('Cache-Control', 'public, max-age=60')
-        self.set_header('Expires', datetime.datetime.utcnow()+datetime.timedelta(minutes=1))
+        self.set_header('Expires', datetime.datetime.utcnow() + datetime.timedelta(minutes=1))
         self.write(''.encode('utf-8-sig'))
         self.finish(fo.read())
 
@@ -166,7 +166,7 @@ class MainHandler(tornado.web.RequestHandler):
         except AttributeError:
             MainHandler.last_visited = []
         current_time = time.time()
-        threshold_time = current_time-20
+        threshold_time = current_time - 20
         result = True
         for i, (last_time, ip) in enumerate(MainHandler.last_visited):
             if last_time < threshold_time:
@@ -218,6 +218,7 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 class CookieVerifyHandler(tornado.web.RequestHandler):
+
     def get(self):
         self.write('OK')
 
